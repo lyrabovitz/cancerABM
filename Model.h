@@ -1,7 +1,14 @@
 #ifndef MODEL_H
 #define MODEL_H
 
-class Model : TCL_obj_t {
+#include <vector>
+
+#include "DataPoint.h"
+#include "Agent.h"
+#include "Cell.h"
+#include "AbnormalCell.h"
+
+class Model{
 
 private:
 	std::vector<AbnormalCell> abnormal_cells;
@@ -30,6 +37,8 @@ public:
 	void ProliferateCell(AbnormalCell cell);
 
 	void MoveCell(AbnormalCell cell);
+
+	Model();
 };
 
 #endif

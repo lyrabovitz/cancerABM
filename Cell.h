@@ -4,8 +4,14 @@
 class Cell : Agent {
 
 private:
-	Model model;
 	float fitness;
+
+public:
+	Cell(int _agentType, float _fitness)
+	{
+		agentType = _agentType;
+		fitness = _fitness;
+	}
 };
 
 #endif

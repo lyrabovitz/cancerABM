@@ -1,8 +1,16 @@
+#include <iostream>
+
 #include "Model.h"
+
+Model::Model()
+{
+	tStep = 1;
+}
 
 void Model::AdvanceSimulation() {
 	// TODO - implement Model::AdvanceSimulation
-	throw "Not yet implemented";
+	std::cout << tStep << "\n";
+	tStep++;
 }
 
 void Model::ProliferateCell(AbnormalCell cell) {

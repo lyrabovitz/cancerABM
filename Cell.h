@@ -7,9 +7,8 @@ private:
 	float fitness;
 
 public:
-	Cell(int _agentType, float _fitness)
+	Cell(int _agentType, float _fitness) : Agent(_agentType)
 	{
-		agentType = _agentType;
 		fitness = _fitness;
 	}
 };

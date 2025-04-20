@@ -14,10 +14,9 @@ private:
 	int yPos;
 
 public:
-	AbnormalCell() (int _agentType, float _fitness, Model* _model, float _age, int _nDivisions, float _stickiness, float _jumpRate, int _xPos, int _yPos)
+	AbnormalCell(int _agentType, float _fitness, Model* _model, float _age, int _nDivisions, float _stickiness, float _jumpRate, int _xPos, int _yPos) : 
+		Cell(_agentType, _fitness)
 	{
-		agentType = _agentType;
-		fitness = _fitness;
 		model = _model;
 		age = _age;
 		nDivisions = _nDivisions;

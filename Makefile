@@ -7,3 +7,7 @@ OBJ = Model.o main.o
 
 cancerABM: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
+
+.PHONY : clean
+clean :
+	-rm *.o $(objects) cancerABM

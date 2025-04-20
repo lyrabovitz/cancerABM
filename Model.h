@@ -32,6 +32,8 @@ private:
 	float hundredCellExitTime;
 
 public:
+	void Initialize();
+
 	void AdvanceSimulation();
 
 	void ProliferateCell(AbnormalCell cell);

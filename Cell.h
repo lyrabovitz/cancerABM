@@ -1,16 +1,25 @@
 #ifndef CELL_H
 #define CELL_H
 
-class Cell : Agent {
+class Cell {
 
 private:
 	double fitness;
+	int xPos;
+	int yPos;
 
 public:
-	Cell(int _agentType, double _fitness) : Agent(_agentType)
+	Cell(double _fitness, int _xPos, int _yPos)
 	{
 		fitness = _fitness;
+		xPos = _xPos;
+		yPos = _yPos;
 	}
+
+	double GetFitness() {return fitness;}
+
+	int GetXPos() {return xPos;}
+	int GetYPos() {return yPos;}
 };
 
 #endif

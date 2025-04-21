@@ -11,6 +11,8 @@ public:
 	{
 		agentType = _agentType;
 	}
+
+	int GetAgentType() {return agentType;}
 };
 
 #endif

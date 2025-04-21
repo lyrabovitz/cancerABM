@@ -8,12 +8,12 @@
 
 int main() 
 {
-
-
     Model model;
 
     //parameters
-    model.maxCells = 100*100;
+    model.nRows = 102;
+    model.nColumns = 102;
+    model.maxCells = (model.nRows - 2) * (model.nColumns - 2);
     model.membranePorosity = 0.5;
     model.divisionAge = 20;
     model.stickinessMutationRate = 0.1;
@@ -22,16 +22,16 @@ int main()
 	model.divisionRateAbnormal = 0.6;
 	model.deathRateAbnormal = 0.001;
     model.proteinDensity = 0.1;
-	int maxNormalCellsPerColumn = 40;
-    model.maxNormalCells = 81 * maxNormalCellsPerColumn;
+	model.maxNormalCellsPerRow = 40;
 	double timeTotal = 24;
 	int nTimeSteps = 1800;
     model.timePerStep = timeTotal / static_cast<double>(nTimeSteps);
-    model.nRows = 100;
-    model.nColumns = 100;
+    
     
     //initialize model (initial generation)
     model.Initialize();
+
+    //model.TestPrint();
 
     //set up output file
 

@@ -2,29 +2,39 @@
 #define ABNORMALCELL_H
 
 class Model;
-class AbnormalCell : Cell {
+class AbnormalCell : public Cell {
 
 private:
 	Model* model;
-	double age;
+	int age;
 	int nDivisions;
 	double stickiness;
 	double jumpRate;
-	int xPos;
-	int yPos;
 
 public:
-	AbnormalCell(int _agentType, double _fitness, Model* _model, double _age, int _nDivisions, double _stickiness, double _jumpRate, int _xPos, int _yPos) : 
-		Cell(_agentType, _fitness)
+	AbnormalCell(double _fitness, int _xPos, int _yPos, Model* _model, int _age, int _nDivisions, double _stickiness, double _jumpRate) : 
+		Cell(_fitness, _xPos, _yPos)
 	{
 		model = _model;
 		age = _age;
 		nDivisions = _nDivisions;
 		stickiness = _stickiness;
 		jumpRate = _jumpRate;
-		xPos = _xPos;
-		yPos = _yPos;
+		
 	}
+
+	void SetAge(int _age) {age = _age;}
+	double GetAge() {return age;}
+
+	void SetDivisions(int _divisions) {nDivisions = _divisions;}
+	double GetDivisions() {return nDivisions;}
+
+	void SetStickiness(int _stickiness) {stickiness = _stickiness;}
+	double GetStickiness() {return stickiness;}
+
+	void SetJumpRate(int _jumpRate) {jumpRate = _jumpRate;}
+	double GetJumpRate() {return jumpRate;}
+	
 };
 
 #endif

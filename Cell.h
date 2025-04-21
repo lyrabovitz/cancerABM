@@ -4,10 +4,10 @@
 class Cell : Agent {
 
 private:
-	float fitness;
+	double fitness;
 
 public:
-	Cell(int _agentType, float _fitness) : Agent(_agentType)
+	Cell(int _agentType, double _fitness) : Agent(_agentType)
 	{
 		fitness = _fitness;
 	}

@@ -6,15 +6,15 @@ class AbnormalCell : Cell {
 
 private:
 	Model* model;
-	float age;
+	double age;
 	int nDivisions;
-	float stickiness;
-	float jumpRate;
+	double stickiness;
+	double jumpRate;
 	int xPos;
 	int yPos;
 
 public:
-	AbnormalCell(int _agentType, float _fitness, Model* _model, float _age, int _nDivisions, float _stickiness, float _jumpRate, int _xPos, int _yPos) : 
+	AbnormalCell(int _agentType, double _fitness, Model* _model, double _age, int _nDivisions, double _stickiness, double _jumpRate, int _xPos, int _yPos) : 
 		Cell(_agentType, _fitness)
 	{
 		model = _model;

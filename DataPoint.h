@@ -4,16 +4,18 @@
 class DataPoint {
 
 private:
+	double time;
 	int nNormalCells;
 	int nAbnormalCells;
-	float avgStickiness;
-	float avgJumpRate;
+	double avgStickiness;
+	double avgJumpRate;
 	int nInvasiveCells;
-	float membraneDensity;
+	double membraneDensity;
 
 public:
-	DataPoint(int _nNormalCells, int _nAbnormalCells, float _avgStickiness, float _avgJumpRate, int _nInvasiveCells, float _membraneDensity)
+	DataPoint(double _time, int _nNormalCells, int _nAbnormalCells, double _avgStickiness, double _avgJumpRate, int _nInvasiveCells, double _membraneDensity)
 	{
+		time = _time;
 		nNormalCells = _nNormalCells;
 		nAbnormalCells = _nAbnormalCells;
 		avgStickiness = _avgStickiness;

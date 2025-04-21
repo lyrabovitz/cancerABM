@@ -1,4 +1,5 @@
 CC=g++
+CXXFLAGS = -std=c++20
 DEPS = Model.h DataPoint.h Agent.h Cell.h AbnormalCell.h
 OBJ = Model.o main.o
 

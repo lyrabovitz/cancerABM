@@ -2,6 +2,7 @@
 #define MODEL_H
 
 #include <vector>
+#include <chrono>
 
 #include "DataPoint.h"
 #include "Agent.h"
@@ -11,27 +12,36 @@
 class Model{
 
 private:
-	std::vector<AbnormalCell> abnormal_cells;
-	std::vector<DataPoint> data_points;
-	std::vector<Cell> cells;
-	std::vector<Agent> agents;
+	std::vector<AbnormalCell*> abnormalCells;
+	std::vector<DataPoint*> dataPoints;
+	std::vector<Cell*> normalCells;
+	std::vector<Agent*> agents;
+	std::vector<std::vector<Agent*>> agentSpace;
+	std::vector<std::vector<Cell*>> normalCellSpace;
 	int tStep;
-	int maxCells;
-	float membranePorosity;
-	float jumpMutationRate;
-	int divisionAge;
-	float stickinessMutationRate;
-	int maxDivisions;
-	float divisionRateAbnormal;
-	float deathRateAbnormal;
-	float proteinDensity;
-	int maxNormalCellsPerColumn;
-	int timeTotal;
-	int nTimeSteps;
-	float firstCellExitTime;
-	float hundredCellExitTime;
+	double time;
+	std::chrono::steady_clock::time_point tStart;
+	std::chrono::steady_clock::time_point tEnd;
+	
 
 public:
+	int maxCells;
+	double membranePorosity;
+	int divisionAge;
+	double stickinessMutationRate;
+	double jumpMutationRate;
+	int maxDivisions;
+	double divisionRateAbnormal;
+	double deathRateAbnormal;
+	double proteinDensity;
+	int maxNormalCells;
+	double timePerStep;
+	double firstCellExitTime = 0;
+	double hundredCellExitTime = 0;
+	int nRows;
+	int nColumns;
+
+
 	void Initialize();
 
 	void AdvanceSimulation();
@@ -41,6 +51,7 @@ public:
 	void MoveCell(AbnormalCell cell);
 
 	Model();
+	~Model();
 };
 
 #endif

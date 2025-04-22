@@ -527,6 +527,12 @@ void Model::GenerateProteins()
 
 }
 
+double Model::GetTimeSinceStart()
+{
+	tEnd = std::chrono::steady_clock::now();
+	return (double) std::chrono::duration_cast<std::chrono::milliseconds>(tEnd - tStart).count() / 1000;
+}
+
 void Model::TestPrint()
 {
 	std::cout << "----Agent Space----\n";

@@ -70,9 +70,10 @@ public:
 	double proteinDensity;
 	int maxNormalCellsPerRow;
 	double timePerStep;
-	
 	int nRows;
 	int nColumns;
+
+	double GetTimeSinceStart();
 
 	void Initialize();
 

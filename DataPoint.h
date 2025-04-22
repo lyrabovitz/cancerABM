@@ -23,6 +23,7 @@ public:
 		nInvasiveCells = _nInvasiveCells;
 		membraneDensity = _membraneDensity;
 	}
+	friend ostream& operator<<(ostream& os, const DataPoint& dp);
 };
 
 #endif

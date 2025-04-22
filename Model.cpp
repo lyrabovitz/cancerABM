@@ -5,6 +5,7 @@
 #include <array>
 #include <numeric>
 #include <utility>
+#include <cmath>
 
 #include "Model.h"
 
@@ -51,13 +52,12 @@ void Model::Initialize()
 	generator.seed(seed);
 
 	//generate empty agent space and cell space
-	Agent* nullAgent = new Agent(EMPTY);
-	agents.push_back(nullAgent);
-	Cell* nullCell = new Cell(0, -1, -1);
+	
+	Cell* nullCell = new Cell(EMPTY, -1, -1);
 	normalCells.push_back(nullCell);
 
-	std::vector<Agent*> emptyAgentRow;
-	std::vector<Cell*> emptyCellRow;
+	std::vector<Agent*> emptyAgentRow = {};
+	std::vector<Cell*> emptyCellRow = {};
 	for(int i = 0; i < nRows; i++)
 	{
 		agentSpace.push_back(emptyAgentRow);
@@ -65,10 +65,12 @@ void Model::Initialize()
 
 		for(int j = 0; j < nColumns; j++)
 		{
+			Agent* nullAgent = new Agent(EMPTY);
+			agents.push_back(nullAgent);
 			agentSpace[i].push_back(nullAgent);
 			normalCellSpace[i].push_back(nullCell);
 		}
-	}
+	} 
 
 	//generate membranes
 	GenerateMembranes();
@@ -96,33 +98,94 @@ void Model::Initialize()
 
 void Model::AdvanceSimulation() 
 {
+	//for random chance checks
+	std::uniform_real_distribution<double> probability(0.0,1.0);
+
 	double sumStickiness = 0;
 	double sumJumpRate = 0;
+
+	std::vector<int> toErase = {};
+
 	//for each abnormal cell
+	for(int i = 0; i < nAbnormalCells; i++)
 	{
+		AbnormalCell* abCell = abnormalCells[i];
+
+		//if cell has breached membrane, mark for deletion and skip rest of this loop iteration
+		if(abCell->GetXPos() == -1)
+		{
+			toErase.push_back(i);
+			continue;
+		}
+		int xPos = abCell->GetXPos();
+		int yPos = abCell->GetYPos();
+
 		//increase age
+		abCell->SetAge(abCell->GetAge()+1);
 
-		//mutate stickiness and jump radius, add to sums
+		//random chance for cell death if divisions left is >= max divisions
+		if(abCell->GetDivisions() >= maxDivisions && probability(generator) < deathRateAbnormal)
+		{
+			nAbnormalCells -= 1;
+			agentSpace[xPos][yPos]->SetAgentType(EMPTY);
+			toErase.push_back(i);
+		}
+		//otherwise random chance for proliferation and possibly movement if cell is over division age
+		else
+		{
+			//add stickiness and jump rate to sums for averaging later
+			sumStickiness += abCell->GetStickiness();
+			sumJumpRate += abCell->GetJumpRate();
 
-		//random chance for cell death if divisions left is 0
+			if(abCell->GetAge() >= divisionAge && probability(generator) < divisionRateAbnormal)
+			{
+				//cell proliferation
+				ProliferateCell(abCell);
 
-		//otherwise random chance for proliferation if cell is over division age
+				//cell movement
+				int x = abCell->GetXPos();
+				int y = abCell->GetYPos();
 
-
+				//stickiness check
+				//# occupied neighboring grid cells
+				int occupied = 0;
+				for(int i = x-1; i <= x+1; i++)
+				{
+					for(int j = y-1; j <= y+1; j++)
+					{
+						if((i != x || j != y) //ignore space occupied by this cell
+							&& agentSpace[i][j]->GetAgentType() != EMPTY) {occupied++;}
+					}
+				}
+				double threshold = pow(1-abCell->GetStickiness(), occupied);
+				if(probability(generator) < threshold)
+				{
+					MoveCell(abCell);
+				}
+			}
+		}	
 	}
-	//generate data point
-	int nNormalCells = normalCells.size();
-	int nAbnormalCells = abnormalCells.size();
-	double avgStickiness = sumStickiness / static_cast<double>(nAbnormalCells);
-	double avgJumpRate = sumJumpRate / static_cast<double>(nAbnormalCells);
-	//!!!!!!!!!MembraneDensity needs to be implemented
-	DataPoint* dataPoint = new DataPoint(time, nNormalCells, nAbnormalCells, avgStickiness, avgJumpRate, nInvasiveCells, 0);
-	dataPoints.push_back(dataPoint);
+	//delete dead cells
+	for(int i : toErase)
+	{
+		delete(abnormalCells[i]);
+	}
+	int nErased = 0;
+	for(int i : toErase)
+	{
+		abnormalCells.erase(abnormalCells.begin()+i-nErased);
+		nErased++;
+	}
 
 	//increase time step and time
 	tStep++;
 	time += timePerStep;
-	
+
+	//generate data point
+	double avgStickiness = sumStickiness / static_cast<double>(nAbnormalCells);
+	double avgJumpRate = sumJumpRate / static_cast<double>(nAbnormalCells);
+	DataPoint* dataPoint = new DataPoint(time, nNormalCells, nAbnormalCells, avgStickiness, avgJumpRate, nInvasiveCells, membraneDensity);
+	dataPoints.push_back(dataPoint);
 }
 
 /*
@@ -130,8 +193,112 @@ void Model::AdvanceSimulation()
 Proliferates an abnormal cell
 
 */
-void Model::ProliferateCell(AbnormalCell cell) 
+void Model::ProliferateCell(AbnormalCell* cell) 
 {
+	//for random chance checks
+	std::uniform_real_distribution<double> probability(0.0,1.0);
+
+	int x = cell->GetXPos();
+	int y = cell->GetYPos();
+
+	//find neighboring grid cells that are empty or contain healthy cells
+	std::pair<int,int> destination;
+	std::vector<std::pair<int,int>> empty = {};
+	std::vector<std::pair<int,int>> normal = {};
+	for(int i = x-1; i <= x+1; i++)
+	{
+		for(int j = y-1; j <= y+1; j++)
+		{
+			int agentType = agentSpace[i][j]->GetAgentType();
+			if(agentType == EMPTY) 
+			{
+				empty.push_back({i,j});
+			}
+			else if(agentType == NORMAL)
+			{
+				normal.push_back({i,j});
+			}
+		}
+	}
+
+	//empty location prioritized over competing with normal cell
+	if(empty.size() != 0)
+	{
+		//pick a random empty grid cell for the new mutant cell
+		std::shuffle(empty.begin(), empty.end(), generator);
+		destination = empty[0];
+	}
+	//if no neighboring grid cells are empty, compete with a normal cell
+	else if(normal.size() != 0)
+	{
+		double weakestFitness = 2; //fitness never over 1, so at least one lower will be found
+		double cellFitness;
+		Cell* weakestCell;
+		Cell* normalCell;
+		std::pair<int,int> weakestLocation;
+		//find weakest normal cell
+		for(auto location : normal)
+		{
+			normalCell = normalCellSpace[location.first][location.second];
+			cellFitness = normalCell->GetFitness();
+			if(cellFitness < weakestFitness)
+			{
+				weakestFitness = cellFitness;
+				weakestCell = normalCell;
+				weakestLocation = location;
+			}
+		}
+		//if abnormal cell is weaker than weakest normal cell, proliferation does not occur
+		if(cell->GetFitness() < weakestFitness)
+		{
+			return;
+		}
+		destination = weakestLocation;
+		nNormalCells--;
+	}
+	//if no empty spaces or normal cells are available, proliferation does not occur
+	else
+	{
+		return;
+	}
+
+	//mother cell age resets
+	cell->SetAge(0);
+
+	//number of divisions for mother cell decreases
+	cell->SetDivisions(cell->GetDivisions() + 1);
+
+	//
+	//generate new abnormal cell
+	//
+	int xPos = destination.first;
+	int yPos = destination.second;
+	agentSpace[xPos][yPos]->SetAgentType(ABNORMAL);
+
+	//# of divisions inherited from mother cell
+	int divisions = cell->GetDivisions();
+
+	//stickiness mutates from the mother cell, must stay within range [0,1]
+	double stickiness = cell->GetStickiness() - stickinessMutationRate + 
+		2*stickinessMutationRate*probability(generator);
+	if(stickiness < 0 || stickiness > 1) {stickiness = cell->GetStickiness();}
+
+	//jump rate mutates from mother cell, cannot be negative
+	std::uniform_int_distribution<int> jumpDistribution(cell->GetJumpRate() - 
+		jumpMutationRate, cell->GetJumpRate() + jumpMutationRate);
+	int jumpRate = jumpDistribution(generator);
+	if(jumpRate < 0) {jumpRate = 0;}
+
+	//fitness is randomly between 0.5 and 1
+	double fitness = 0.5 + 0.5*probability(generator);
+
+	//age is of course 0
+	int age = 0;
+	
+	AbnormalCell* newAbCell = new AbnormalCell(fitness, xPos, yPos, age, divisions, stickiness, jumpRate);
+	abnormalCells.push_back(newAbCell);
+	nAbnormalCells++;
+
 	return;
 }
 
@@ -140,40 +307,86 @@ void Model::ProliferateCell(AbnormalCell cell)
 Moves an abnormal cell. Returns 1 if cell becomes invasive (membrane breached)
 
 */
-int Model::MoveCell(AbnormalCell cell) 
+void Model::MoveCell(AbnormalCell* cell) 
 {
-	// TODO - implement Model::MoveCell
-	throw "Not yet implemented";
+	//for random chance checks
+	std::uniform_real_distribution<double> probability(0.0,1.0);
+
+	int x = cell->GetXPos();
+	int y = cell->GetYPos();
+	int jump = cell->GetJumpRate();
+
+	//ensure move will stay in domain
+	if((x-jump >= 0) && (x+jump <= nColumns-1) && (y-jump >= 0) && (y+jump <= nRows-1))
+	{
+		//pick a random direction
+		std::uniform_int_distribution<int> directionDistribution(0,3);
+		int direction = directionDistribution(generator);
+
+		//attempt to move
+		std::vector<std::pair<int,int>> destinations = {{x-jump,y}, {x+jump,y}, {x,y-jump}, {x,y+jump}};
+		std::pair<int,int> destination = destinations[direction];
+		Agent* destinationAgent = agentSpace[destination.first][destination.second];
+		switch(destinationAgent->GetAgentType())
+		{
+			//empty space
+			case EMPTY:
+				agentSpace[x][y]->SetAgentType(EMPTY);
+				destinationAgent->SetAgentType(ABNORMAL);
+				cell->SetXPos(destination.first);
+				cell->SetYPos(destination.second);
+				break;
+
+			//membrane
+			case MEMBRANE:
+				//random chance of breaching membrane
+				//if statement evaluates true if membrane NOT breached
+				if(probability(generator) > membranePorosity)
+				{
+					break;
+				}
+				destinationAgent->SetAgentType(BREACHEDMEMBRANE);
+				
+			//breached membrane
+			case BREACHEDMEMBRANE:
+				agentSpace[x][y]->SetAgentType(EMPTY);
+				nAbnormalCells--;
+				nInvasiveCells++;
+				if(nInvasiveCells==1) {firstCellExitTime = time;}
+				if(nInvasiveCells==100) {hundredCellExitTime = time;}
+				break;
+		}
+	} 
+	return;
 }
 
+/*
+
+Generate extracellular matrix membrane, which forms the "outer border" of the simulation space
+
+*/
 void Model::GenerateMembranes()
 {
-	Agent* membrane;
+	
 	//first and last row are all membrane
 	for(int i = 0; i < nColumns; i++)
 	{
 		//first row
-		membrane = new Agent(MEMBRANE);
-		agentSpace[0][i] = membrane;
-		agents.push_back(membrane);
-
+		agentSpace[0][i]->SetAgentType(MEMBRANE);
+	
 		//last row
-		membrane = new Agent(MEMBRANE);
-		agentSpace[nRows-1][i] = membrane;
-		agents.push_back(membrane);
+		agentSpace[nRows-1][i]->SetAgentType(MEMBRANE);
 	}
+
 	//left and right border for every other row
 	for(int i = 1; i < nRows - 1; i++)
 	{
 		//left border
-		membrane = new Agent(MEMBRANE);
-		agentSpace[i][0] = membrane;
-		agents.push_back(membrane);
+		agentSpace[i][0]->SetAgentType(MEMBRANE);
 
 		//last row
-		membrane = new Agent(MEMBRANE);
-		agentSpace[i][nColumns-1] = membrane;
-		agents.push_back(membrane);
+		agentSpace[i][nColumns-1]->SetAgentType(MEMBRANE);
+
 	}
 }
 
@@ -230,6 +443,7 @@ void Model::GenerateNormalCells()
 		for(int j = 0; j < maxNormalCellsPerRow; j++)
 		{
 			GenerateNormalCell(i,xPositions[j]);
+			nNormalCells += 1;
 		}
 	}
 }
@@ -255,21 +469,20 @@ void Model::GenerateInitialMutation()
 	//generate parameters
 	//fitness for abnormal cells is randomly between 0.5 and 1
 	
-	//std::uniform_real_distribution<double> distribution(0, 0.5);
-	double fitnessInitial = 0.5; // + distribution(generator);
+	std::uniform_real_distribution<double> distribution(0.0, 0.5);
+	double fitnessInitial = 0.5 + distribution(generator);
 	int ageInitial = 0;
 	int divisionsInitial = 0;
 	double stickinessInitial = 0.9;
-	double jumpRateInitial = 1;
+	int jumpRateInitial = 1;
 
 	//create cell
-	Agent* agent = new Agent(ABNORMAL);
-	agentSpace[xPos][yPos] = agent;
-
+	agentSpace[xPos][yPos]->SetAgentType(ABNORMAL);
 	AbnormalCell* mutatedCell = new AbnormalCell(fitnessInitial, xPos, 
-		yPos, this, ageInitial, divisionsInitial, stickinessInitial, 
+		yPos, ageInitial, divisionsInitial, stickinessInitial, 
 		jumpRateInitial);
 	abnormalCells.push_back(mutatedCell);
+	nAbnormalCells++;
 }
 
 /*
@@ -284,7 +497,7 @@ void Model::GenerateProteins()
 
 	//locate empty cells
 	//x,y coordinates for each empty cell
-	std::vector<std::pair<int,int>> emptyCells;
+	std::vector<std::pair<int,int>> emptyCells = {};
 
 	//we know that the outer border is not empty, so we can ignore those cells
 	for(int i = 1; i < nRows-1; i++)
@@ -303,16 +516,10 @@ void Model::GenerateProteins()
 	//shuffle possible locations
 	std::shuffle(emptyCells.begin(), emptyCells.end(), generator);
 
-	Agent* protein;
 	//place proteins
 	for(int i = 1; i < nProteins; i++)
 	{
-		protein = new Agent(PROTEIN);
-
-		//memory management: destroyed in model destructor
-		agents.push_back(protein);
-
-		agentSpace[emptyCells[i].first][emptyCells[i].second] = protein;
+		agentSpace[emptyCells[i].first][emptyCells[i].second]->SetAgentType(PROTEIN);
 	}
 
 }
@@ -327,5 +534,20 @@ void Model::TestPrint()
 			std::cout << agent->GetAgentType();
 		}
 		std::cout << "\n";
+	}
+}
+
+void Model::AbTest()
+{
+	for(int i = 0; i < nAbnormalCells; i++)
+	{
+		std::cout << "\n----abnormal cell " << i+1 << "----\n";
+		std::cout << "x: " << abnormalCells[i]->GetXPos() << "\n";
+		std::cout << "y: " << abnormalCells[i]->GetYPos() << "\n";
+		std::cout << "fitness: " << abnormalCells[i]->GetFitness() << "\n";
+		std::cout << "age: " << abnormalCells[i]->GetAge() << "\n";
+		std::cout << "divisions: " << abnormalCells[i]->GetDivisions() << "\n";
+		std::cout << "stickiness: " << abnormalCells[i]->GetStickiness() << "\n";
+		std::cout << "jumpRate: " << abnormalCells[i]->GetJumpRate() << "\n";
 	}
 }

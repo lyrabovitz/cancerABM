@@ -19,7 +19,10 @@ public:
 	double GetFitness() {return fitness;}
 
 	int GetXPos() {return xPos;}
+	void SetXPos(int x) {xPos = x;}
+
 	int GetYPos() {return yPos;}
+	void SetYPos(int y) {yPos = y;}
 };
 
 #endif

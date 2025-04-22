@@ -1,7 +1,7 @@
 CC=g++
 CXXFLAGS = -std=c++20 -g
 DEPS = Model.h DataPoint.h Agent.h Cell.h AbnormalCell.h
-OBJ = Model.o main.o
+OBJ = Model.o DataPoint.o main.o
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)

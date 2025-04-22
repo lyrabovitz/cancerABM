@@ -12,6 +12,7 @@ public:
 		agentType = _agentType;
 	}
 
+	void SetAgentType(int _agentType) {agentType = _agentType;}
 	int GetAgentType() {return agentType;}
 };
 

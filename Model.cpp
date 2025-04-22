@@ -346,6 +346,7 @@ void Model::MoveCell(AbnormalCell* cell)
 					break;
 				}
 				destinationAgent->SetAgentType(BREACHEDMEMBRANE);
+				membraneDensity-=membraneDensityPerCell;
 				
 			//breached membrane
 			case BREACHEDMEMBRANE:
@@ -388,6 +389,8 @@ void Model::GenerateMembranes()
 		agentSpace[i][nColumns-1]->SetAgentType(MEMBRANE);
 
 	}
+	int nMembraneCells = 2*nRows + 2*(nColumns-2);
+	membraneDensityPerCell = 1/static_cast<double>(nMembraneCells);
 }
 
 /*

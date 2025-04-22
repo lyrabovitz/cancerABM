@@ -46,9 +46,17 @@ int main()
         return 1;
     }
 
+    out << "Time, Normal Cells, Abnormal Cells, Invasive Cells, Average Stickiness, Average Jump Rate, Membrane Density" << std::endl;
     for(auto dp : model.GetDataPoints())
     {
-        out << dp;
+        out << dp->GetTime() << ",";
+        out << dp->GetNormalCells() << ",";
+        out << dp->GetAbnormalCells() << ",";
+        out << dp->GetInvasiveCells() << ",";
+        out << dp->GetAvgStickiness() << ",";
+        out << dp->GetAvgJumpRate() << ",";
+        out << dp->GetMembraneDensity() << ",";
+        out << std::endl;
     }
 
     out.close();

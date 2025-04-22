@@ -29,6 +29,7 @@ private:
 	double firstCellExitTime = 0;
 	double hundredCellExitTime = 0;
 	double membraneDensity = 1;
+	double membraneDensityPerCell;
 	int nInvasiveCells = 0;
 	int nAbnormalCells = 0;
 	int nNormalCells = 0;

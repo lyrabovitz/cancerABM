@@ -1,6 +1,8 @@
 #ifndef DATAPOINT_H
 #define DATAPOINT_H
 
+#include <iostream>
+
 class DataPoint {
 
 private:
@@ -23,7 +25,14 @@ public:
 		nInvasiveCells = _nInvasiveCells;
 		membraneDensity = _membraneDensity;
 	}
-	friend ostream& operator<<(ostream& os, const DataPoint& dp);
+	
+	double GetTime() {return time;}
+	double GetAvgStickiness() {return avgStickiness;}
+	double GetAvgJumpRate() {return avgJumpRate;}
+	double GetMembraneDensity() {return membraneDensity;}
+	int GetNormalCells() {return nNormalCells;}
+	int GetAbnormalCells() {return nAbnormalCells;}
+	int GetInvasiveCells() {return nInvasiveCells;}
 };
 
 #endif
